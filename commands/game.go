@@ -1,53 +1,54 @@
 package commands
 
-import (
-	"fmt"
-
-	"github.com/gocolly/colly/v2"
-	"github.com/jph5396/bref/model"
+type (
+	//GameCommand command that is capable of scraping an entire day.
+	GameCommand struct {
+		Name   string
+		Config CommandConfig
+		Args   []string
+	}
 )
 
-//BaseURL base url to strape.
-var BaseURL string = "https://www.basketball-reference.com"
+//NewGameCommand returns a GameCommand type implementing the Commmand interface.
+func NewGameCommand() GameCommand {
+	return GameCommand{
+		Name: "game",
+	}
+}
 
-//GetGame returns the box score from the game.
-func GetGame(gameid string) model.Game {
-	var g model.Game
-	g.ID = gameid
+//CommandName returns name
+func (gc *GameCommand) CommandName() string {
+	return gc.Name
+}
 
-	c := colly.NewCollector()
+// CommandDescription describe command.
+func (gc *GameCommand) CommandDescription() string {
+	return `
+	game <gameid > - scrape the boxscore of a specific game. the gameid can be found in the last 
+	section of the boxscore URL before the -.html suffix.
+	`
+}
 
-	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("visiting", r.URL)
-	})
+//SetConfig for the command
+func (gc *GameCommand) SetConfig(c CommandConfig) {
+	gc.Config = c
+}
 
-	c.OnHTML("div.scorebox", func(e *colly.HTMLElement) {
-		g.GameInfo = parseScorebox(e)
+//Run Execute the command
+func (gc *GameCommand) Run(args []string) error {
 
-	})
+	g, err := GetGame(args[0])
+	if err != nil {
+		return err
+	}
+	filename := g.ID + ".json"
+	if gc.Config.SaveDir != "" {
+		filename = gc.Config.SaveDir + filename
+	}
 
-	c.OnHTML("div.table_container", func(e *colly.HTMLElement) {
-
-		//if this element represents the away basic table.
-		if e.Attr("id") == "div_box-"+g.GameInfo.Away.Initals+"-game-basic" {
-			g.AwayBox.Basic = parseBaseTable(e)
-		}
-		//if this element represents the away advanced table.
-		if e.Attr("id") == "div_box-"+g.GameInfo.Away.Initals+"-game-advanced" {
-			g.AwayBox.Advanced = parseAdvTable(e)
-		}
-
-		// home version.
-		if e.Attr("id") == "div_box-"+g.GameInfo.Home.Initals+"-game-basic" {
-			g.HomeBox.Basic = parseBaseTable(e)
-		}
-
-		if e.Attr("id") == "div_box-"+g.GameInfo.Home.Initals+"-game-advanced" {
-			g.HomeBox.Advanced = parseAdvTable(e)
-		}
-	})
-
-	c.Visit(BaseURL + "/boxscores/" + gameid + ".html")
-
-	return g
+	err = JSONFileWriter(filename, g)
+	if err != nil {
+		return err
+	}
+	return nil
 }

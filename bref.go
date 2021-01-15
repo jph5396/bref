@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 
@@ -9,31 +9,42 @@ import (
 )
 
 func main() {
-	gameData := commands.GetGame(os.Args[1])
+	config := commands.CommandConfig{}
+	global := flag.NewFlagSet("global", flag.ExitOnError)
+	// NOTE: print not implemented yet.
+	// global.BoolVar(&config.Print, "print", false, "print results of scrape.")
+	global.StringVar(&config.SaveDir, "usedir", "", "path to an alternate directory to save files. needs to already exist.")
 
-	err := JSONFileWriter("test.json", gameData)
-	if err != nil {
-		fmt.Println(err.Error())
+	comms := commands.NewCommandFactory()
+	global.Usage = func() {
+		printHelp(comms)
+		fmt.Println("global options:")
+		global.PrintDefaults()
 	}
+	if len(os.Args) < 2 {
+		fmt.Println("Error: not enough arugments.")
+		flag.Usage()
+		os.Exit(1)
+	}
+	parseErr := global.Parse(os.Args[3:])
+	if parseErr != nil {
+		fmt.Printf("parse error: %v \n", parseErr.Error())
+	}
+	c, ok := comms.Get(os.Args[1])
+	if ok {
+		c.SetConfig(config)
+		err := c.Run(os.Args[2:])
+		if err != nil {
+			fmt.Printf("Error: %v. use flag --help for command docs. \n", err.Error())
+		}
+
+	} else {
+		fmt.Println("Error: Command not found.")
+		global.Usage()
+	}
+
 }
 
-// JSONFileWriter reusable function for writing structs to json files.
-// will return any errors that occur, or nil if it succeeds.
-func JSONFileWriter(path string, data interface{}) error {
-
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "    ")
-	encodeErr := encoder.Encode(data)
-	if encodeErr != nil {
-		return encodeErr
-	}
-
-	defer file.Close()
-	fmt.Println("Created file: ", path)
-	return nil
+func printHelp(c commands.CommandFactory) {
+	c.PrintCommands()
 }
