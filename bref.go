@@ -23,7 +23,7 @@ func main() {
 	}
 	if len(os.Args) < 2 {
 		fmt.Println("Error: not enough arugments.")
-		flag.Usage()
+		global.Usage()
 		os.Exit(1)
 	}
 	parseErr := global.Parse(os.Args[3:])
