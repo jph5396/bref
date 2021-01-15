@@ -11,5 +11,5 @@ type Command interface {
 	Parse([]string) error
 	//Run executes actual command. it should return a json encoded byte array if any
 	// data is to be saved, and any error that occurs or nil if everything was successful.
-	Run() ([]byte, error)
+	Run() error
 }
