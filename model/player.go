@@ -54,7 +54,7 @@ type (
 		DRTG         int     `bref:"def_rtg"`
 		BPM          string  `bref:"bpm"`
 		DNP          string  `bref:"reason"`
-		ScoureID     string
+		SourceID     string
 	}
 )
 
@@ -119,6 +119,7 @@ Find:
 		field := reflectWrite.Elem().Field(i)
 		fieldTag, _ := reflectRead.Type().Field(i).Tag.Lookup("bref")
 		if fieldTag == tag {
+			//convert string value to its proper type.
 			switch field.Kind() {
 			case reflect.Int:
 				typeVal, err := strconv.ParseInt(value, 10, 64)

@@ -1,45 +1,39 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"strings"
+	"os"
 
 	"github.com/jph5396/bref/commands"
-
-	"github.com/gocolly/colly/v2"
 )
 
 func main() {
-	// var advArr []model.PlayerAdvBox
-	var target string = "https://www.basketball-reference.com/boxscores/202101130CHO.html"
-	c := colly.NewCollector()
+	gameData := commands.GetGame(os.Args[1])
 
-	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("visiting", r.URL)
-	})
-
-	c.OnHTML("div.scorebox", func(e *colly.HTMLElement) {
-		box := commands.ParseScorebox(e)
-		fmt.Println(box)
-	})
-
-	c.OnHTML("div.table_container", func(e *colly.HTMLElement) {
-
-		if strings.TrimSpace(e.ChildText("table caption")) == "Table" {
-
-		}
-	})
-
-	c.Visit(target)
-
-	// for _, val := range advArr {
-	// 	fmt.Println(val)
-	// }
+	err := JSONFileWriter("test.json", gameData)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 }
 
-func printStatHeader(i int, t *colly.HTMLElement) bool {
-	t.ForEach("tr td", func(j int, td *colly.HTMLElement) {
-		fmt.Print(td.Attr("data-stat"), " / ")
-	})
-	return false
+// JSONFileWriter reusable function for writing structs to json files.
+// will return any errors that occur, or nil if it succeeds.
+func JSONFileWriter(path string, data interface{}) error {
+
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "    ")
+	encodeErr := encoder.Encode(data)
+	if encodeErr != nil {
+		return encodeErr
+	}
+
+	defer file.Close()
+	fmt.Println("Created file: ", path)
+	return nil
 }
