@@ -1,0 +1,43 @@
+name: Linux Release 
+
+on:
+  push: 
+    branches: [ $default-branch ]
+  workflow_dispatch: 
+
+jobs: 
+  release: 
+    name: linux release 
+    runs-on: ubuntu-latest 
+    steps: 
+    - name: checkout 
+      uses: actions/checkout@v2
+    - name: set up go 
+      uses: actions/setup-go@v2
+      with: 
+        go-version: 'v1.15.6'
+    - name: download dependencies
+      run: go mod download 
+    - name: build 
+      run: |
+        go build -o temp/bref
+        zip temp/linux.zip temp/bref 
+    - name: create pre release 
+      uses: actions/create-release@v1
+      env: 
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with: 
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false 
+        prerelease: true
+    - name: upload release asset
+      uses: actions/upload-realse-asset@v1
+      env: 
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with: 
+        upload_url: ${{ steps.create_pre_release.outputs.upload_url }}
+        asset_path: ./temp/linux.zip 
+        asset_name: linux.zip
+        asset_content_type: application/zip 
+       
