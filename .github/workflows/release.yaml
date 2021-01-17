@@ -24,12 +24,13 @@ jobs:
         go build -o temp/bref
         zip temp/linux.zip temp/bref 
     - name: create pre release 
+      id: create_pre_release
       uses: actions/create-release@v1
       env: 
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with: 
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
+        tag_name: ${{ github.run_id }}
+        release_name: Release ${{ github.sha }}-${{ github.run_id}}
         draft: false 
         prerelease: true
     - name: upload release asset
