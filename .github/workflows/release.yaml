@@ -2,7 +2,8 @@ name: Linux Release
 
 on:
   push: 
-    branches: [ $default-branch ]
+    branches:
+      - master
   workflow_dispatch: 
 
 jobs: 
@@ -32,7 +33,7 @@ jobs:
         draft: false 
         prerelease: true
     - name: upload release asset
-      uses: actions/upload-realse-asset@v1
+      uses: actions/upload-release-asset@v1
       env: 
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with: 
